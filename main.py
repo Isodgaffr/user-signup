@@ -1,6 +1,4 @@
-import webapp2
-import cgi
-import re
+
 
 # html boilerplate for header and footer
 page_header = """
