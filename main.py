@@ -1,103 +1,72 @@
+from flask import Flask, request, redirect, render_template
+import re
+
+app = Flask(__name__)
+app.config['DEBUG'] = True
+
+@app.route('/', methods=['POST', 'GET'])
+def index():
+
+    username = ''
+    email = ''
+    username_error = ''
+    password_error = ''
+    verify_password_error = ''
+    email_error = ''
+    title = 'Signup'
+
+    if request.method == 'POST':
+
+        username = request.form['username']
+        password = request.form['password']
+        verify_password = request.form['verify_password']
+        email = request.form['email']
+
+        for i in username:
+            #if there is a blank space in username, it's invalid
+            if i.isspace():
+                username_error = 'Username cannot contain spaces.'
+                username = ''
+            else:
+                #if username has fewer than 3 or greater than 20 characters, it's invalid
+                if (len(username) < 3) or (len(username) > 20):
+                    username_error = 'Username needs to be 3-20 characters.'
+                    username = ''
+
+        if not username:
+            username_error = 'Not a valid username'
+            username = ''
+
+        for i in password:
+            if i.isspace():
+                password_error = 'Password must not contain spaces.'
+            else:
+                if (len(password) < 3) or (len(password) > 20):
+                    password_error = 'Password must be 3-20 characters and not contain spaces.'
+        if not len(password):
+            password_error = 'Not a valid password'
+
+        if password != verify_password:
+            verify_password_error = 'Passwords do not match.'
+
+        if (email != '') and (not re.match('^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email)):
+            email_error = 'This is not a valid email.'
+            email = ''
+
+        if (not username_error) and (not password_error) and (not verify_password_error) and (not email_error):
+            return redirect('/confirmation?username={0}'.format(username))
+
+    return render_template('new_user_signup.html', title=title, username=username, email=email,
+                           username_error=username_error, password_error=password_error,
+                           verify_password_error=verify_password_error, email_error=email_error)
 
 
-# html boilerplate for header and footer
-page_header = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Sign Up</title>
-    <style type="text/css">
-        .error {
-            color: red;
-        }
-    </style>
-</head>
-<body>
-"""
-
-page_footer = """
-</body>
-</html>
-"""
-
-class Index(webapp2.RequestHandler):
-    def get(self):
-        edit_header = "<h1>Sign up <u>now</u> to have onions delivered to you <em>daily!</em></h1>"
-
-        usernameerror = self.request.get('uerror')
-        passworderror = self.request.get('perror')
-        emailerror = self.request.get('emerror')
-        username = self.request.get('username')
-        useremail = self.request.get('useremail')
-
-        form = """
-        <form action="/welcome" method="post">
-            <label>Username</label>
-                <input type="text" name="username" value="{uname}" required/> <font style="color:red" pattern="">{uerror}</font>
-            <br>
-            <label>Password</label>
-                <input type="password" name="password1" required/>
-            <br>
-            <label>Verify Password</label>
-                <input type="password" name="password2" required/> <font style="color:red" pattern="">{perror}</font>
-            <br>
-            <label>Email (optional)</label>
-                <input type="email" name="useremail" value="{uemail}"/> <font style="color:red" pattern="">{eerror}</font>
-            <br>
-            <input type="submit" value="Submit"/>
-        </form>
-        """.format(uname=username, uerror=usernameerror, perror=passworderror, uemail=useremail, eerror=emailerror)
-
-        main_content = edit_header + form
-        response = page_header + main_content + page_footer
-        self.response.write(response)
+@app.route('/confirmation')
+def confirmation():
+    title = "Welcome!"
+    username = request.args.get('username')
+    return render_template('confirmation.html', title=title, username=username)
 
 
-
-class Welcome(webapp2.RequestHandler):
-
-    def post(self):
-
-        uerror = ""
-        perror = ""
-        emerror = ""
-        username = self.request.get('username')
-        password1 = self.request.get("password1")
-        password2 = self.request.get('password2')
-        useremail = self.request.get('useremail')
-
-        user_re = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
-        password_re = re.compile(r"^.{3,20}$")
-        email_re = re.compile(r"^[\S]+@[\S]+.[\S]+$")
-
-        # check if passwords match
-        if not password1 == password2:
-            perror = "Passwords don't match."
-            self.redirect('/?perror={}&username={}&useremail={}'.format(cgi.escape(perror, quote=True),username,useremail))
-
-        # check if password is valid
-        if password_re.match(password1) == None:
-            perror = "Invalid password, try again."
-            self.redirect('/?perror={}&username={}&useremail={}'.format(cgi.escape(perror, quote=True),username,useremail))
-
-        # check if username is valid
-        if user_re.match(username) == None:
-            uerror = "Invalid username, try again."
-            self.redirect('/?uerror={}&useremail={}'.format(cgi.escape(uerror, quote=True),useremail))
-
-        # check if email is valid
-        if email_re.match(useremail) == None:
-            emerror = "Invalid username, try again."
-            self.redirect('/?username={}&emerror={}'.format(cgi.escape(emerror, quote=True),useremail))
-
-        welcome_message = "<h1>Welcome, {0}! to this really blank, page.</h1>".format(username)
-
-        main_content = welcome_message
-
-        response = page_header + main_content + page_footer
-        self.response.write(response)
-
-app = webapp2.WSGIApplication([
-    ('/', Index),
-    ('/welcome', Welcome)
-], debug=True)
+if __name__ == '__main__':
+    app.run()
