@@ -63,7 +63,7 @@ def index():
 
 @app.route('/confirmation')
 def confirmation():
-    title = "Welcome!"
+    title = "Hiya Doin'!"
     username = request.args.get('username')
     return render_template('confirmation.html', title=title, username=username)
 
